@@ -102,12 +102,26 @@ export interface Streak {
   current_streak: number;
   longest_streak: number;
   last_study_date: string;
-  created_at: string;
+  last_active_date: string;
   updated_at: string;
 }
 
 export interface HealthResponse {
-  status: 'ok' | 'error';
+  status: string;
   timestamp: string;
   uptime: number;
+}
+
+export interface DashboardResponse {
+  date: string;
+  focused_minutes: number;
+  session_count: number;
+  daily_target_minutes: number;
+  target_met: boolean;
+  topics_completed: number;
+  streak: {
+    current: number;
+    best: number;
+  };
+  active_topic: RoadmapTopic | null;
 }
