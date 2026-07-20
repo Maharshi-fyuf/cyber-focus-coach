@@ -171,6 +171,6 @@ See `docs/DECISIONS.md` for full decision rationale.
 | Frontend framework | React + Vite | Next.js, Svelte |
 | Type system | TypeScript | Plain JavaScript |
 | Backend runtime | Node.js + Express | Python + FastAPI |
-| Database | SQLite + better-sqlite3 | PostgreSQL, IndexedDB |
+| Database | SQLite + @libsql/client | PostgreSQL, IndexedDB |
 | State management | Zustand | Redux, React Context |
 | Monorepo structure | npm workspaces | Turborepo, Nx |

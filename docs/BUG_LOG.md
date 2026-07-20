@@ -57,7 +57,13 @@ Two Python installations are present:
 - Python 3.15: Experimental free-threaded build — executable is named `python3.15t.exe`, not `python.exe`
 
 The py launcher's default points to 3.15t, which doesn't exist at the expected path.
-
+### [BUG-002] `better-sqlite3` native build fails due to missing Python and new Node version
+- **Status**: ✅ Resolved (Intentional Choice)
+- **Date**: 2026-07-20
+- **Environment**: Windows, Node v24.18.0
+- **Symptom**: `npm install better-sqlite3` triggers `node-gyp rebuild` which fails instantly because `Python` is not available (see BUG-001). Prebuilt binaries for Node v24 (ABI 137) do not exist yet.
+- **Root Cause**: `better-sqlite3` strictly requires native C++ compilation when a prebuilt binary isn't available for the target Node.js version.
+- **Resolution**: Swapped `better-sqlite3` for `@libsql/client`. LibSQL provides a drop-in SQLite replacement that does not require `node-gyp` to compile on the target machine, allowing us to bypass the missing Python environment completely while keeping local `.db` file support.
 ### Resolution
 Install clean Python 3.13 from python.org (official installer, not Microsoft Store or Anaconda). Check "Add to PATH" during installation.
 

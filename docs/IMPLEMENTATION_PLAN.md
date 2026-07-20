@@ -43,8 +43,8 @@ feat(scaffold): initialize monorepo with React+Vite and Express
 
 ---
 
-### ⏳ MILESTONE 02: Database Foundation
-**Status:** Not started  
+### ✅ MILESTONE 02: Database Foundation
+**Status:** Complete  
 **Objective:** Create the SQLite schema, seed data, and database service  
 **Estimated Time:** 60 minutes  
 **Difficulty:** 2/5  

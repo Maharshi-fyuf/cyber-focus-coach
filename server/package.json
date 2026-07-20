@@ -8,17 +8,18 @@
     "dev": "npx tsx watch src/index.ts",
     "build": "npx tsc",
     "start": "node dist/index.js",
-    "typecheck": "npx tsc --noEmit"
+    "typecheck": "npx tsc --noEmit",
+    "db:setup": "npx tsx scripts/setup-db.ts",
+    "db:reset": "node -e \"const fs=require('fs'); fs.rmSync('data/cfc.db', {force:true});\" && npm run db:setup"
   },
   "dependencies": {
     "@cyber-focus-coach/shared": "*",
-    "better-sqlite3": "^11.8.1",
+    "@libsql/client": "^0.14.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.1",

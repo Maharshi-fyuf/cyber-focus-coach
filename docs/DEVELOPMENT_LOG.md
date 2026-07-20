@@ -127,22 +127,44 @@ None at this phase. Environment validation was clean. All findings documented.
 - Verified backend server execution and `/api/health` endpoint returning active status (`{"status":"ok", ...}`).
 
 ### Next Steps
-- Begin **Milestone 02: Database Foundation**
-  - Implement SQLite schema (`server/src/db/schema.sql`)
-  - Implement seed dataset (`server/src/db/seed.sql`)
-  - Build database service connection helper (`server/src/db/database.ts`)
+- Begin **Milestone 03: Backend API — Session Routes**
+  - Implement POST /api/session/start
+  - Implement POST /api/session/pause
+  - Implement POST /api/session/resume
+  - Implement POST /api/session/end
+
+---
+
+## 2026-07-20 — Session 03: Database Foundation
+
+### Milestone: 02 — Database Foundation
+
+**Status:** ✅ Complete  
+**Duration:** ~25 minutes  
+**Difficulty:** 2/5  
+
+### Accomplishments
+- Swapped `better-sqlite3` for `@libsql/client` (due to missing Python node-gyp build environment on Windows).
+- Implemented `server/src/db/schema.sql` translating the 10 domain entities from `DATABASE_SCHEMA.md` into raw SQLite tables with foreign key constraints and `ON DELETE CASCADE`.
+- Implemented `server/src/db/seed.sql` with a default user, default settings, and the 30-topic cybersecurity roadmap.
+- Created `server/src/db/database.ts` as a connection singleton establishing a local file connection to `data/cfc.db`.
+- Created `server/scripts/setup-db.ts` to automatically enforce WAL mode, enable foreign keys, and run schema/seed files sequentially.
+- Verified database creation: `npm run db:setup` successfully generated `cfc.db` and inserted 1 user and 30 roadmap topics.
+
+### Next Steps
+- **Milestone 03: Backend API — Session Routes**
 
 ---
 
 ### Git Commit Message
 ```
-feat(scaffold): initialize monorepo with React+Vite and Express
+feat(db): establish sqlite database foundation
 
-- Create root package.json with npm workspaces (client, server, shared)
-- Build shared TypeScript interfaces package (@cyber-focus-coach/shared)
-- Create client workspace (React + Vite + Cyberpunk Design System)
-- Create server workspace (Express + TypeScript + /api/health endpoint)
-- Add root typecheck and dev scripts using concurrently
-- Update IMPLEMENTATION_PLAN.md, BUG_LOG.md, SETUP.md, and DEVELOPMENT_LOG.md
+- Replace better-sqlite3 with @libsql/client due to python build failure
+- Create schema.sql for all 10 core tables with proper FK constraints
+- Create seed.sql with default user and 30 roadmap topics
+- Add database.ts helper to manage libsql connection and PRAGMAs
+- Add setup-db.ts execution script
+- Update package.json with db:setup and db:reset lifecycle commands
 ```
 
