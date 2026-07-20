@@ -59,8 +59,8 @@ feat(scaffold): initialize monorepo with React+Vite and Express
 
 ---
 
-### ⏳ MILESTONE 03: Backend API — Session Routes
-**Status:** Not started  
+### ✅ MILESTONE 03: Backend API — Session Routes
+**Status:** Complete  
 **Objective:** Implement session lifecycle API endpoints  
 **Estimated Time:** 60–90 minutes  
 **Difficulty:** 3/5  

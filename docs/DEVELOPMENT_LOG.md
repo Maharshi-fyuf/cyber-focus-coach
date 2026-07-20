@@ -152,7 +152,27 @@ None at this phase. Environment validation was clean. All findings documented.
 - Verified database creation: `npm run db:setup` successfully generated `cfc.db` and inserted 1 user and 30 roadmap topics.
 
 ### Next Steps
-- **Milestone 03: Backend API — Session Routes**
+- **Milestone 04: Backend API — Data Routes**
+
+---
+
+## 2026-07-20 — Session 04: Backend API - Session Routes
+
+### Milestone: 03 — Backend API (Session Routes)
+
+**Status:** ✅ Complete  
+**Duration:** ~25 minutes  
+**Difficulty:** 3/5  
+
+### Accomplishments
+- Implemented `server/src/controllers/session.controller.ts` with business logic for session state management.
+- Built logic to validate active sessions and calculate streak increments safely.
+- Bound API routes using Express `Router` in `server/src/routes/session.routes.ts`.
+- Mapped `/api/session/*` routes in `server/src/index.ts`.
+- Verified all endpoints (`/start`, `/active`, `/pause`, `/resume`, `/end`) by sending sequential fetch requests to ensure state machine transitions worked correctly.
+
+### Next Steps
+- **Milestone 04: Backend API — Data Routes**
 
 ---
 
