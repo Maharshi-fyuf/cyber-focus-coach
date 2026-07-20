@@ -172,7 +172,26 @@ None at this phase. Environment validation was clean. All findings documented.
 - Verified all endpoints (`/start`, `/active`, `/pause`, `/resume`, `/end`) by sending sequential fetch requests to ensure state machine transitions worked correctly.
 
 ### Next Steps
-- **Milestone 04: Backend API — Data Routes**
+- **Milestone 05: Frontend — Focus Engine & Layout**
+
+---
+
+## 2026-07-20 — Session 05: Backend API - Data Routes
+
+### Milestone: 04 — Backend API (Data Routes)
+
+**Status:** ✅ Complete  
+**Duration:** ~20 minutes  
+**Difficulty:** 2/5  
+
+### Accomplishments
+- Implemented controllers and routes for all data endpoints (`dashboard`, `roadmap`, `logs`, `streaks`, `quizzes`, `settings`, `focus`).
+- Fixed a schema alignment issue where `settings` didn't have an `updated_at` column, and correctly linked foreign keys for `focus_events`.
+- Wired up 7 new routers into `index.ts`.
+- Created an automated test script (`test-data-api.js`) that comprehensively tested all GET, POST, and PUT operations for data routes.
+
+### Next Steps
+- **Milestone 05: Frontend — Focus Engine & Layout**
 
 ---
 

@@ -77,8 +77,8 @@ feat(scaffold): initialize monorepo with React+Vite and Express
 
 ---
 
-### ⏳ MILESTONE 04: Backend API — Data Routes
-**Status:** Not started  
+### ✅ MILESTONE 04: Backend API — Data Routes
+**Status:** Complete  
 **Objective:** Implement dashboard, roadmap, logs, and settings endpoints  
 **Estimated Time:** 60 minutes  
 **Difficulty:** 2/5  
