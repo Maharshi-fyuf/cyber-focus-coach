@@ -1,0 +1,33 @@
+# Git line ending normalization
+# Ensures consistent line endings regardless of OS
+
+# Default: normalize to LF in repository, checkout as native
+* text=auto
+
+# Explicitly LF for these (never convert)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Source files — normalize to LF
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.sql text eol=lf
+*.env text eol=lf
+
+# Binary files — never convert
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.db binary
+*.sqlite binary
