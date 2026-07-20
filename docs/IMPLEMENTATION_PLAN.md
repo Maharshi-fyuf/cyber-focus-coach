@@ -20,8 +20,8 @@ Each milestone is 30–90 minutes of focused work.
 
 ## Phase 1: Project Scaffold
 
-### ⏳ MILESTONE 01: Monorepo Setup
-**Status:** Blocked — waiting for Node.js  
+### ✅ MILESTONE 01: Monorepo Setup
+**Status:** Complete  
 **Objective:** Create the correct project structure with all packages  
 **Estimated Time:** 45 minutes  
 **Difficulty:** 2/5  

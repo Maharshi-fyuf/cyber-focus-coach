@@ -46,7 +46,7 @@ What process or code change prevents recurrence?
 **ID:** BUG-001  
 **Date:** 2026-07-20  
 **Severity:** Medium (blocks Python usage, not blocking Node.js work)  
-**Status:** Open — awaiting user action
+**Status:** Open — deferred (non-blocking for Milestone 1 Node.js build)
 
 ### Description
 Running `py --version` produces: `Unable to create process using 'python3.15t.exe': The system cannot find the file specified`. The py launcher (Windows Python launcher) is configured to use Python 3.15 as the default, but the Python 3.15 installation is an experimental free-threaded build missing the standard `python.exe` executable.

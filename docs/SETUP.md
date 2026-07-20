@@ -112,6 +112,11 @@ Run from the **project root**:
 ### Camera permission denied
 **Expected behavior.** Camera is optional. Enable it in Settings → Focus Detection → Camera toggle.
 
+### Python `py` Launcher Broken / Missing Executable (BUG-001)
+**Status:** Non-blocking for Milestone 1 (Node.js stack).  
+**Cause:** Windows `py` launcher points to non-existent `python3.15t.exe`.  
+**Fix:** See `docs/BUG_LOG.md` (BUG-001). Reinstall official Python 3.13 from python.org when Python features are needed.
+
 ---
 
 ## Development Workflow

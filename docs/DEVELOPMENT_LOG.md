@@ -84,31 +84,65 @@ None at this phase. Environment validation was clean. All findings documented.
 
 ### Next Steps
 
-**Blocked until:** Node.js LTS is installed by user
-
-**After Node.js is installed:**  
-1. Run `node --version` and `npm --version` to verify
-2. Run `node-gyp` check to verify build tools
-3. Begin **Milestone 01: Project Scaffold**
-   - Initialize monorepo with npm workspaces
-   - Create `client/` and `server/` packages
-   - Install all dependencies
-   - Configure TypeScript
-   - Verify both dev servers start
+- Proceed with **Milestone 01: Project Scaffold (Monorepo Setup)**
 
 ---
 
-### Git Commit Message (for end of this milestone)
-```
-docs: initialize repository and write full project documentation
+## 2026-07-20 — Session 02: Node.js Verified & Milestone 01 Initialization
 
-- Add .gitignore for Node.js, SQLite, and OS files
-- Write PRD.md, TRD.md, ARCHITECTURE.md, DATABASE_SCHEMA.md
-- Write DECISIONS.md with 6 architectural decisions
-- Write DEVELOPMENT_LOG.md, BUG_LOG.md, POSTMORTEMS.md
-- Write CHANGELOG.md, API.md, ROADMAP.md, SETUP.md
-- Write CONTRIBUTING.md, GLOSSARY.md, APP_FLOW.md
-- Write IMPLEMENTATION_PLAN.md with full milestone breakdown
+### Milestone: ENV-01 (Re-validation) & M-01 Initiation
 
-Environment status: Node.js missing (blocker), Git ready, VS Code ready
+**Status:** ✅ Unblocked  
+**Duration:** ~10 minutes  
+
+### Updated Environment Status
+
+| Tool | Version / Status | Action |
+|------|-----------------|--------|
+| Git | ✅ v2.55.0 | Ready |
+| Node.js | ✅ v24.18.0 | Verified working |
+| npm | ✅ v11.16.0 | Verified working |
+| npx | ✅ v11.16.0 | Verified working |
+| Python | ⚠️ Broken (`BUG-001`) | Non-blocking for Milestone 1; logged for later resolution |
+
+### Actions Taken
+1. Re-validated environment (Node v24.18.0, npm v11.16.0, npx v11.16.0, Git v2.55.0).
+2. Logged Python `py` launcher issue (`BUG-001`) as non-blocking in `docs/BUG_LOG.md` and `docs/SETUP.md`.
+3. Prepared `implementation_plan.md` for **Milestone 01: Monorepo Setup**.
+
+---
+
+### Milestone: 01 — Monorepo Setup
+
+**Status:** ✅ Complete  
+**Duration:** ~25 minutes  
+**Difficulty:** 2/5  
+
+### Accomplishments
+- Created root `package.json` with npm workspaces (`client`, `server`, `shared`) and dev scripts (`npm run dev`, `build`, `typecheck`).
+- Created `shared/` package containing TypeScript domain definitions for User, Settings, RoadmapTopic, StudySession, FocusEvent, DailyLog, Quiz, QuizAttempt, Streak, and HealthResponse.
+- Created `client/` workspace with React 19 + Vite + TypeScript, dark cyberpunk design tokens in `index.css`, Lucide icons, and API proxy (`/api` -> `http://localhost:3001`).
+- Created `server/` workspace with Express + TypeScript, dotenv, CORS, and `/api/health` diagnostic route.
+- Verified TypeScript compilation across all workspaces (`npm run typecheck` returned 0 errors).
+- Verified backend server execution and `/api/health` endpoint returning active status (`{"status":"ok", ...}`).
+
+### Next Steps
+- Begin **Milestone 02: Database Foundation**
+  - Implement SQLite schema (`server/src/db/schema.sql`)
+  - Implement seed dataset (`server/src/db/seed.sql`)
+  - Build database service connection helper (`server/src/db/database.ts`)
+
+---
+
+### Git Commit Message
 ```
+feat(scaffold): initialize monorepo with React+Vite and Express
+
+- Create root package.json with npm workspaces (client, server, shared)
+- Build shared TypeScript interfaces package (@cyber-focus-coach/shared)
+- Create client workspace (React + Vite + Cyberpunk Design System)
+- Create server workspace (Express + TypeScript + /api/health endpoint)
+- Add root typecheck and dev scripts using concurrently
+- Update IMPLEMENTATION_PLAN.md, BUG_LOG.md, SETUP.md, and DEVELOPMENT_LOG.md
+```
+
