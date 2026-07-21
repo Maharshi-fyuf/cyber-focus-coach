@@ -1,5 +1,3 @@
-import type { FocusEventType } from '@cyber-focus-coach/shared';
-
 // We define a generic Detector interface that all plugins must implement
 export interface FocusDetector {
   name: string;
@@ -8,7 +6,7 @@ export interface FocusDetector {
 }
 
 export interface FocusEventPayload {
-  type: FocusEventType;
+  type: string;
   scoreDelta: number;
   metadata?: any;
 }

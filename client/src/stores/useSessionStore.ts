@@ -29,7 +29,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   tick: () => {
     const { currentSession, status } = get();
-    if (status === 'ACTIVE' && currentSession?.start_time) {
+    if (status === 'running' && currentSession?.start_time) {
       // Calculate delta from start time to prevent drift
       const start = new Date(currentSession.start_time).getTime();
       const now = Date.now();
@@ -53,16 +53,9 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         return;
       }
 
-      // Normalize backend session_status to frontend SessionStatus
-      let normalizedStatus: SessionStatus = 'ACTIVE';
-      if (data.session_status === 'running') normalizedStatus = 'ACTIVE';
-      else if (data.session_status === 'paused') normalizedStatus = 'PAUSED';
-      else if (data.session_status === 'completed') normalizedStatus = 'COMPLETED';
-      else if (data.session_status === 'abandoned') normalizedStatus = 'ABANDONED';
-
       set({ 
         currentSession: data, 
-        status: normalizedStatus
+        status: data.session_status || 'IDLE'
       });
       get().tick();
     } catch (err: any) {
@@ -87,7 +80,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       // Fix: backend returns the session object directly, not wrapped in a "session" key
       set({ 
         currentSession: data, 
-        status: 'ACTIVE',
+        status: 'running',
         elapsedSeconds: 0,
         loading: false 
       });
@@ -102,8 +95,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     
     set({ loading: true, error: null });
     try {
-      const res = await fetch(`/api/session/${currentSession.id}/pause`, {
-        method: 'PATCH',
+      const res = await fetch(`/api/session/pause`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason })
       });
@@ -112,7 +105,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       
       set({ 
         currentSession: data, 
-        status: 'PAUSED',
+        status: 'paused',
         loading: false 
       });
     } catch (err: any) {
@@ -126,15 +119,15 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     
     set({ loading: true, error: null });
     try {
-      const res = await fetch(`/api/session/${currentSession.id}/resume`, {
-        method: 'PATCH'
+      const res = await fetch(`/api/session/resume`, {
+        method: 'POST'
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       
       set({ 
         currentSession: data, 
-        status: 'ACTIVE',
+        status: 'running',
         loading: false 
       });
       get().tick();
@@ -149,8 +142,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     
     set({ loading: true, error: null });
     try {
-      const res = await fetch(`/api/session/${currentSession.id}/end`, {
-        method: 'PATCH',
+      const res = await fetch(`/api/session/end`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(notes ? { notes } : {})
       });

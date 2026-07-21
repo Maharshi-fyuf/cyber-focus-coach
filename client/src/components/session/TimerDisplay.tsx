@@ -1,8 +1,6 @@
-
-
 interface TimerDisplayProps {
   seconds: number;
-  status: 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'ABANDONED' | 'IDLE';
+  status: 'IDLE' | 'running' | 'paused' | 'completed' | 'abandoned';
 }
 
 function formatTime(totalSeconds: number) {
@@ -21,19 +19,19 @@ export function TimerDisplay({ seconds, status }: TimerDisplayProps) {
   let glow = 'none';
 
   switch (status) {
-    case 'ACTIVE':
+    case 'running':
       color = 'var(--accent-cyan)';
       glow = '0 0 20px rgba(0, 240, 255, 0.4)';
       break;
-    case 'PAUSED':
+    case 'paused':
       color = 'var(--accent-amber)';
       glow = '0 0 20px rgba(255, 170, 0, 0.4)';
       break;
-    case 'COMPLETED':
+    case 'completed':
       color = 'var(--accent-green)';
       glow = '0 0 20px rgba(0, 255, 136, 0.4)';
       break;
-    case 'ABANDONED':
+    case 'abandoned':
       color = 'var(--accent-red)';
       glow = '0 0 20px rgba(255, 0, 85, 0.4)';
       break;

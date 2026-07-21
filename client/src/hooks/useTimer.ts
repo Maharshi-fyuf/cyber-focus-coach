@@ -8,7 +8,7 @@ export function useTimer() {
   useEffect(() => {
     let intervalId: number | undefined;
 
-    if (status === 'ACTIVE') {
+    if (status === 'running') {
       // Trigger a tick immediately so we don't wait 1s for the first update
       tick();
       // Use window.setInterval to ensure type matches what React/Vite expects for browser env

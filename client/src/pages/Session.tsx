@@ -8,11 +8,13 @@ import { Card } from '../components/ui/Card';
 import { FocusEngine } from '../engine/FocusEngine';
 import { VisibilityDetector } from '../engine/detectors/VisibilityDetector';
 import { ShieldAlert, Play, Pause, Square } from 'lucide-react';
+import { SessionReviewModal } from '../components/session/SessionReviewModal';
 
 export function Session() {
   const navigate = useNavigate();
   const { currentSession, status, elapsedSeconds, pauseSession, resumeSession, endSession, syncSession, loading, error } = useSessionStore();
   const [distractionCount, setDistractionCount] = useState(0);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   // Initialize the timer
   useTimer();
@@ -78,22 +80,19 @@ export function Session() {
         <TimerDisplay seconds={elapsedSeconds} status={status} />
         
         <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-          {status === 'ACTIVE' && (
+          {status === 'running' && (
             <Button variant="secondary" onClick={() => pauseSession('Manual pause')} disabled={loading}>
               <Pause size={18} style={{ marginRight: '0.5rem' }} />
               Pause
             </Button>
           )}
-          {status === 'PAUSED' && (
+          {status === 'paused' && (
             <Button variant="primary" onClick={() => resumeSession()} disabled={loading}>
               <Play size={18} style={{ marginRight: '0.5rem' }} />
               Resume
             </Button>
           )}
-          <Button variant="danger" onClick={async () => {
-            await endSession();
-            navigate('/');
-          }} disabled={loading || status === 'COMPLETED' || status === 'ABANDONED'}>
+          <Button variant="danger" onClick={() => setShowReviewModal(true)} disabled={loading || status === 'completed'}>
             <Square size={18} style={{ marginRight: '0.5rem' }} />
             End Session
           </Button>
@@ -124,6 +123,17 @@ export function Session() {
            </div>
          </Card>
       </div>
+
+      {showReviewModal && (
+        <SessionReviewModal 
+          loading={loading}
+          onClose={() => setShowReviewModal(false)}
+          onSubmit={async (data) => {
+            await endSession(data.notes);
+            navigate('/');
+          }}
+        />
+      )}
 
     </div>
   );
