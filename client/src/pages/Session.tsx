@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessionStore } from '../stores/useSessionStore';
 import { useTimer } from '../hooks/useTimer';
@@ -7,21 +7,66 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { FocusEngine } from '../engine/FocusEngine';
 import { VisibilityDetector } from '../engine/detectors/VisibilityDetector';
+import { WindowFocusDetector } from '../engine/detectors/WindowFocusDetector';
+import { IdleDetector } from '../engine/detectors/IdleDetector';
+import { createFocusEventReporter } from '../engine/FocusEventReporter';
 import { ShieldAlert, Play, Pause, Square } from 'lucide-react';
 import { SessionReviewModal } from '../components/session/SessionReviewModal';
+import type { FocusEventType } from '@cyber-focus-coach/shared';
+
+// Hardcoded defaults matching seed data (settings integration is a future milestone)
+const IDLE_THRESHOLD_MS = 30_000;   // idle_threshold_seconds = 30
+const GRACE_PERIOD_MS = 10_000;     // grace_period_seconds = 10
+
+// Distraction events that start the grace timer
+const DISTRACTION_EVENTS: FocusEventType[] = ['TAB_HIDDEN', 'WINDOW_BLUR', 'IDLE_START'];
+// Recovery events that cancel the grace timer
+const RECOVERY_EVENTS: FocusEventType[] = ['TAB_VISIBLE', 'WINDOW_FOCUS', 'IDLE_END'];
+
+// Map distraction event types to human-readable pause reasons
+const PAUSE_REASONS: Partial<Record<FocusEventType, string>> = {
+  TAB_HIDDEN: 'Auto-paused: Tab hidden',
+  WINDOW_BLUR: 'Auto-paused: Window lost focus',
+  IDLE_START: 'Auto-paused: Idle detected',
+};
 
 export function Session() {
   const navigate = useNavigate();
   const { currentSession, status, elapsedSeconds, pauseSession, resumeSession, endSession, syncSession, loading, error } = useSessionStore();
   const [distractionCount, setDistractionCount] = useState(0);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [focusSignals, setFocusSignals] = useState({
+    visibility: 'OK' as 'OK' | 'AWAY',
+    windowFocus: 'OK' as 'OK' | 'AWAY',
+    idle: 'OK' as 'OK' | 'IDLE',
+  });
+
+  // Grace period refs (refs instead of state to avoid re-render cascades)
+  const graceTimerRef = useRef<number | undefined>(undefined);
+  const lastDistractionRef = useRef<FocusEventType | null>(null);
 
   // Initialize the timer
   useTimer();
 
+  // Stable pauseSession ref to avoid stale closures in the grace timer
+  const pauseSessionRef = useRef(pauseSession);
+  pauseSessionRef.current = pauseSession;
+
+  const statusRef = useRef(status);
+  statusRef.current = status;
+
+  // Clear grace timer helper
+  const clearGraceTimer = useCallback(() => {
+    if (graceTimerRef.current !== undefined) {
+      window.clearTimeout(graceTimerRef.current);
+      graceTimerRef.current = undefined;
+    }
+    lastDistractionRef.current = null;
+  }, []);
+
   // Initialize the Focus Engine when entering the session
   useEffect(() => {
-    // Only run if we are actually in a session (ACTIVE or PAUSED).
+    // Only run if we are actually in a session (running or paused).
     // If IDLE, sync first.
     if (useSessionStore.getState().status === 'IDLE') {
       syncSession().then(() => {
@@ -32,26 +77,81 @@ export function Session() {
       return;
     }
 
-    // Register and start the Focus Engine plugins
-    const visibilityDetector = new VisibilityDetector();
-    FocusEngine.registerDetector(visibilityDetector);
+    // Register all detectors
+    FocusEngine.registerDetector(new VisibilityDetector());
+    FocusEngine.registerDetector(new WindowFocusDetector());
+    FocusEngine.registerDetector(new IdleDetector(IDLE_THRESHOLD_MS));
+
+    // Set up the focus event reporter for backend persistence
+    const sessionId = useSessionStore.getState().currentSession?.id;
+    let unsubscribeReporter: (() => void) | undefined;
+    if (sessionId) {
+      unsubscribeReporter = createFocusEventReporter(sessionId);
+    }
     
-    // Subscribe to focus events
+    // Subscribe to focus events for UI + grace period logic
     const unsubscribe = FocusEngine.subscribe((event) => {
-      if (event.type === 'TAB_SWITCH') {
-        setDistractionCount((prev) => prev + 1);
-        // In a real implementation, we might call `pauseSession('Distracted: Tab Switch')` 
-        // after a grace period. For now, we just log it and increment the counter.
+      // Update Focus Signals panel
+      switch (event.type) {
+        case 'TAB_HIDDEN':
+          setFocusSignals(prev => ({ ...prev, visibility: 'AWAY' }));
+          break;
+        case 'TAB_VISIBLE':
+          setFocusSignals(prev => ({ ...prev, visibility: 'OK' }));
+          break;
+        case 'WINDOW_BLUR':
+          setFocusSignals(prev => ({ ...prev, windowFocus: 'AWAY' }));
+          break;
+        case 'WINDOW_FOCUS':
+          setFocusSignals(prev => ({ ...prev, windowFocus: 'OK' }));
+          break;
+        case 'IDLE_START':
+          setFocusSignals(prev => ({ ...prev, idle: 'IDLE' }));
+          break;
+        case 'IDLE_END':
+          setFocusSignals(prev => ({ ...prev, idle: 'OK' }));
+          break;
+      }
+
+      // Grace period logic — only trigger when session is running
+      if (DISTRACTION_EVENTS.includes(event.type)) {
+        setDistractionCount(prev => prev + 1);
+
+        // Only start grace timer if session is currently running and no timer is active
+        if (statusRef.current === 'running' && graceTimerRef.current === undefined) {
+          lastDistractionRef.current = event.type;
+          graceTimerRef.current = window.setTimeout(() => {
+            graceTimerRef.current = undefined;
+            const reason = PAUSE_REASONS[lastDistractionRef.current!] || 'Auto-paused: Distraction detected';
+            lastDistractionRef.current = null;
+            // Only pause if still running (user might have manually paused)
+            if (statusRef.current === 'running') {
+              pauseSessionRef.current(reason);
+            }
+          }, GRACE_PERIOD_MS);
+        }
+      }
+
+      if (RECOVERY_EVENTS.includes(event.type)) {
+        // Cancel the grace timer — user returned before auto-pause fired
+        if (graceTimerRef.current !== undefined) {
+          window.clearTimeout(graceTimerRef.current);
+          graceTimerRef.current = undefined;
+          lastDistractionRef.current = null;
+        }
+        // Do NOT auto-resume. User must click Resume explicitly.
       }
     });
 
     FocusEngine.start();
 
     return () => {
+      clearGraceTimer();
       unsubscribe();
+      if (unsubscribeReporter) unsubscribeReporter();
       FocusEngine.stop();
     };
-  }, [syncSession, navigate]); // Removed `status` from dependencies so it doesn't restart on pause/resume
+  }, [syncSession, navigate, clearGraceTimer]);
 
   if (status === 'IDLE' && loading) {
     return <div className="mono glow-cyan" style={{ color: 'var(--accent-cyan)', textAlign: 'center', marginTop: '4rem' }}>SYNCING SESSION...</div>;
@@ -65,6 +165,9 @@ export function Session() {
       </Card>
     );
   }
+
+  const signalColor = (value: string, ok: string) =>
+    value === ok ? 'var(--accent-green)' : 'var(--accent-amber)';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3rem', maxWidth: '800px', margin: '0 auto' }}>
@@ -103,11 +206,15 @@ export function Session() {
          <Card title="FOCUS SIGNALS" headerIcon={<ShieldAlert size={20} color="var(--accent-cyan)" />}>
            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border-color)' }}>
               <span>Visibility</span>
-              <span style={{ color: 'var(--accent-green)' }}>OK</span>
+              <span style={{ color: signalColor(focusSignals.visibility, 'OK') }}>{focusSignals.visibility}</span>
            </div>
            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border-color)' }}>
-              <span>Cursor Idle</span>
-              <span style={{ color: 'var(--text-muted)' }}>INACTIVE</span>
+              <span>Window Focus</span>
+              <span style={{ color: signalColor(focusSignals.windowFocus, 'OK') }}>{focusSignals.windowFocus}</span>
+           </div>
+           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border-color)' }}>
+              <span>Idle</span>
+              <span style={{ color: signalColor(focusSignals.idle, 'OK') }}>{focusSignals.idle}</span>
            </div>
            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
               <span>Distractions</span>

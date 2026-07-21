@@ -9,13 +9,13 @@ export class VisibilityDetector implements FocusDetector {
 
     if (document.hidden) {
       this.dispatch({
-        type: 'TAB_SWITCH',
+        type: 'TAB_HIDDEN',
         scoreDelta: -10,
         metadata: { reason: 'User switched away from the active tab' }
       });
     } else {
       this.dispatch({
-        type: 'RESUME_TRIGGERED',
+        type: 'TAB_VISIBLE',
         scoreDelta: 0,
         metadata: { reason: 'User returned to the tab' }
       });

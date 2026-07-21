@@ -52,11 +52,20 @@ export interface StudySession {
   created_at: string;
 }
 
+export type FocusEventType =
+  | 'TAB_HIDDEN'
+  | 'TAB_VISIBLE'
+  | 'WINDOW_BLUR'
+  | 'WINDOW_FOCUS'
+  | 'IDLE_START'
+  | 'IDLE_END'
+  | 'SESSION_START'
+  | 'SESSION_END';
+
 export interface FocusEvent {
   id: string;
   session_id: string;
-  event_type: string;
-  // TODO: tighten to a union once Focus Engine (Milestone 10) defines its real event vocabulary
+  event_type: FocusEventType;
   event_value: string | null;
   confidence: number | null;
   timestamp: string;
