@@ -35,74 +35,72 @@ export interface RoadmapTopic {
   is_completed: boolean;
 }
 
-export type SessionStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'ABANDONED';
+export type SessionStatus = 'running' | 'paused' | 'completed';
 
 export interface StudySession {
   id: string;
   user_id: string;
-  topic_id?: number | null;
+  topic_id: number | null;
+  planned_minutes: number;
+  focused_minutes: number;
+  paused_minutes: number;
+  session_status: SessionStatus;
   start_time: string;
-  end_time?: string | null;
-  duration_minutes: number;
-  status: SessionStatus;
-  notes?: string | null;
+  end_time: string | null;
+  focus_score_avg: number | null;
+  pause_reason_last: string | null;
   created_at: string;
 }
-
-export type FocusEventType =
-  | 'TAB_SWITCH'
-  | 'BLUR'
-  | 'CURSOR_IDLE'
-  | 'CAMERA_DISTRACTED'
-  | 'PAUSE_TRIGGERED'
-  | 'RESUME_TRIGGERED';
 
 export interface FocusEvent {
   id: string;
   session_id: string;
+  event_type: string;
+  // TODO: tighten to a union once Focus Engine (Milestone 10) defines its real event vocabulary
+  event_value: string | null;
+  confidence: number | null;
   timestamp: string;
-  event_type: FocusEventType;
-  score_delta: number;
-  metadata_json?: string;
 }
 
 export interface DailyLog {
   id: string;
   user_id: string;
-  date: string; // YYYY-MM-DD
-  total_study_minutes: number;
-  focus_score_avg: number;
-  completed_topics_count: number;
-  reflections_json?: string;
+  log_date: string;
+  topic_id: number | null;
+  summary: string | null;
+  wins: string | null;
+  blockers: string | null;
+  next_step: string | null;
   created_at: string;
 }
 
 export interface Quiz {
   id: string;
   topic_id: number;
-  title: string;
-  description?: string;
-  passing_score: number;
-  created_at: string;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_option: number;
+  explanation: string;
 }
 
 export interface QuizAttempt {
   id: string;
-  user_id: string;
   quiz_id: string;
-  score: number;
-  passed: boolean;
-  answers_json: string;
+  user_id: string;
+  selected_option: number;
+  is_correct: boolean;
   attempted_at: string;
 }
 
 export interface Streak {
   id: string;
   user_id: string;
-  current_streak: number;
-  longest_streak: number;
-  last_study_date: string;
-  last_active_date: string;
+  current_streak_days: number;
+  best_streak_days: number;
+  last_active_date: string | null;
   updated_at: string;
 }
 

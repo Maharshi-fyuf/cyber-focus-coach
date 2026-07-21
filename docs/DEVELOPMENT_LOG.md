@@ -212,8 +212,32 @@ None at this phase. Environment validation was clean. All findings documented.
 - Verified successful TypeScript compilation for both `shared` and `client` packages.
 
 ### Next Steps
-- **Milestone 06: Frontend — Dashboard & Focus Engine**
+- **Milestone 07: Core Components & Library**
 
+---
+
+## 2026-07-20 — Session 07: Focus Engine Foundation
+
+### Milestone: 06 — Focus Engine & Timer Foundation
+**Status:** ✅ Complete  
+**Duration:** ~20 minutes  
+**Difficulty:** 3/5  
+
+### Accomplishments
+- Established global session state management using `zustand` (`useSessionStore.ts`) to track active sessions across navigation boundaries.
+- Designed a drift-resistant React `useTimer` hook using `Date.now()` delta calculation rather than naive increments.
+- Architected a decoupled, event-driven `FocusEngine` to orchestrate various focus signal detectors.
+- Implemented the first plugin: `VisibilityDetector` using the browser Page Visibility API to detect tab switching.
+- Created the dedicated `/session` page and `TimerDisplay` component with cyberpunk styling for different session states (Active, Paused).
+- Successfully connected the Dashboard's "START SESSION" button to the Express API backend, verifying the full `React -> API -> SQLite` data lifecycle.
+
+### Hotfix (BUG-003 & BUG-004)
+- Fixed `400 Bad Request` on Session Start by updating `useSessionStore` to send `planned_minutes: 60` and relaxing the `topic_id` constraint in the backend for unstructured sessions.
+- Fixed `TypeError` on app refresh by correctly handling the `null` response from `GET /api/session/active` in the frontend `syncSession` logic.
+- Fixed completely unresponsive Session UI (frozen timer, broken pause/resume buttons) by correcting the frontend's expected API payload format (removing `.session` wrapping).
+- Fixed inactive Focus Engine by handling React Strict Mode double-mounts properly in `FocusEngine.registerDetector` to ensure fresh DOM closures are executed instead of stale, unmounted ones.
+### Next Steps
+- **Milestone 07: Core Components & Library**
 ---
 
 ### Git Commit Message
@@ -228,3 +252,40 @@ feat(db): establish sqlite database foundation
 - Update package.json with db:setup and db:reset lifecycle commands
 ```
 
+
+## 2026-07-21 — Session 08: Milestone 5.75 - Session Controller Computing
+
+### Milestone: 5.75 — Compute focused_minutes / paused_minutes
+**Status:** ✅ Complete  
+**Duration:** ~20 minutes  
+**Difficulty:** 2/5  
+
+### Accomplishments
+- Implemented tracking of `paused_minutes` in `server/src/controllers/session.controller.ts`.
+- `resumeSession` now computes the duration since the last 'paused' event and updates the database.
+- `endSession` accurately computes `focused_minutes` by subtracting total `paused_minutes` from elapsed time.
+- Integrated accurate `@cyber-focus-coach/shared` typings (`StudySession`, `SessionStatus`) into the backend controller to validate correctness.
+- Resolved BUG-005 relating to focus stats permanently showing 0.
+
+### Next Steps
+- TBD
+
+## 2026-07-21 — Session 09: Milestone 5 Finalization
+
+### Milestone: 5 Finalization
+**Status:** ✅ Complete  
+**Duration:** ~15 minutes  
+**Difficulty:** 2/5  
+
+### Accomplishments
+- **Task 1 & 2 (API Revert):** Reverted the unintended architectural change. Changed `PATCH /:id/*` session routes back to `POST /*`. The backend now automatically resolves the active session for the user instead of requiring the client to track and transmit a `sessionId`. All controllers successfully typecheck.
+- **Task 3 (Business Rules):** Validated the `topic_id` rule. `topic_id` is currently optional. Upon reviewing `BUG_LOG.md` (BUG-003), this was an intentional product decision to allow for "unstructured sessions" (sessions without a specific roadmap topic). Thus, it has been left as optional to maintain that intentional business rule.
+- **Task 4 (Time Accumulation Scenarios):** Ran automated E2E tests for Scenario A (single 30s pause) and Scenario B (multiple 20s pauses). 
+- **Task 5 (Rounding Review):** Identified accumulation drift in `paused_minutes` due to `Math.round()`. (Documented in Technical Debt below).
+
+### Technical Debt: Pause Accumulation Drift
+When a session is paused multiple times for short intervals (e.g., 20 seconds), `Math.round(20000 / 60000)` evaluates to `0`. Thus, the database accumulates `0` paused minutes for that interval. If a user pauses 3 times for 20 seconds each, they have paused for a total of 1 minute, but the database records `0 + 0 + 0 = 0` paused minutes. 
+**Recommendation:** Store exact durations (e.g., `paused_seconds` instead of `paused_minutes`) in the database, and only perform division/rounding when formatting the output for the frontend.
+
+### Next Steps
+- Awaiting next milestone.

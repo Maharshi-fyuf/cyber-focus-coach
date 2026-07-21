@@ -1,17 +1,17 @@
 import type { Request, Response } from 'express';
 import db from '../db/database.js';
 import crypto from 'crypto';
-
+import type { StudySession, SessionStatus } from '@cyber-focus-coach/shared';
 // In a real multi-tenant app, this would come from an auth middleware.
 // For our local app, we use the default user we seeded.
 const DEFAULT_USER_ID = 'default-user-id-001';
 
 export const startSession = async (req: Request, res: Response) => {
     try {
-        const { topic_id, planned_minutes } = req.body;
+        const { topic_id, planned_minutes } = req.body as { topic_id?: number; planned_minutes: number };
 
-        if (!topic_id || !planned_minutes) {
-            return res.status(400).json({ error: 'topic_id and planned_minutes are required' });
+        if (!planned_minutes) {
+            return res.status(400).json({ error: 'planned_minutes is required' });
         }
 
         // Check if there is already an active session
@@ -33,7 +33,7 @@ export const startSession = async (req: Request, res: Response) => {
                 (id, user_id, topic_id, planned_minutes, session_status, start_time, created_at)
                 VALUES (?, ?, ?, ?, 'running', ?, ?)
             `,
-            args: [sessionId, DEFAULT_USER_ID, topic_id, planned_minutes, startTime, startTime]
+            args: [sessionId, DEFAULT_USER_ID, topic_id || null, planned_minutes, startTime, startTime]
         });
 
         // Log the start event
@@ -50,7 +50,7 @@ export const startSession = async (req: Request, res: Response) => {
             args: [sessionId]
         });
 
-        res.status(201).json(newSession.rows[0]);
+        res.status(201).json(newSession.rows[0] as unknown as StudySession);
     } catch (error) {
         console.error('startSession error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -59,7 +59,7 @@ export const startSession = async (req: Request, res: Response) => {
 
 export const pauseSession = async (req: Request, res: Response) => {
     try {
-        const { reason } = req.body;
+        const { reason } = req.body as { reason?: string };
 
         const activeSession = await db.execute({
             sql: `SELECT * FROM study_sessions WHERE user_id = ? AND session_status = 'running' LIMIT 1`,
@@ -95,7 +95,7 @@ export const pauseSession = async (req: Request, res: Response) => {
             args: [sessionId]
         });
 
-        res.json(updatedSession.rows[0]);
+        res.json(updatedSession.rows[0] as unknown as StudySession);
     } catch (error) {
         console.error('pauseSession error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -116,15 +116,26 @@ export const resumeSession = async (req: Request, res: Response) => {
         const sessionId = activeSession.rows[0].id as string;
         const resumeTime = new Date().toISOString();
 
-        // In a real scenario, we'd calculate exactly how many minutes it was paused for based on the last event.
-        // For now, we just update status to running.
+        // Calculate paused minutes
+        const lastPauseEventResult = await db.execute({
+            sql: `SELECT timestamp FROM focus_events WHERE session_id = ? AND event_type = 'paused' ORDER BY timestamp DESC LIMIT 1`,
+            args: [sessionId]
+        });
+
+        let pausedMinutesToAdd = 0;
+        if (lastPauseEventResult.rows.length > 0) {
+            const pauseTimestamp = new Date(lastPauseEventResult.rows[0].timestamp as string).getTime();
+            const now = new Date(resumeTime).getTime();
+            pausedMinutesToAdd = Math.round((now - pauseTimestamp) / 60000);
+        }
+
         await db.execute({
             sql: `
                 UPDATE study_sessions 
-                SET session_status = 'running'
+                SET session_status = 'running', paused_minutes = paused_minutes + ?
                 WHERE id = ?
             `,
-            args: [sessionId]
+            args: [pausedMinutesToAdd, sessionId]
         });
 
         await db.execute({
@@ -140,7 +151,7 @@ export const resumeSession = async (req: Request, res: Response) => {
             args: [sessionId]
         });
 
-        res.json(updatedSession.rows[0]);
+        res.json(updatedSession.rows[0] as unknown as StudySession);
     } catch (error) {
         console.error('resumeSession error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -149,7 +160,7 @@ export const resumeSession = async (req: Request, res: Response) => {
 
 export const endSession = async (req: Request, res: Response) => {
     try {
-        const { notes, reflection, wins, blockers, next_step } = req.body;
+        const { notes, reflection, wins, blockers, next_step } = req.body as { notes?: string; reflection?: string; wins?: string; blockers?: string; next_step?: string };
 
         const activeSession = await db.execute({
             sql: `SELECT * FROM study_sessions WHERE user_id = ? AND session_status IN ('running', 'paused') LIMIT 1`,
@@ -157,22 +168,41 @@ export const endSession = async (req: Request, res: Response) => {
         });
 
         if (activeSession.rows.length === 0) {
-            return res.status(404).json({ error: 'No active session found to end' });
+            return res.status(404).json({ error: 'No active session found' });
         }
 
-        const session = activeSession.rows[0];
+        const session = activeSession.rows[0] as unknown as StudySession;
         const sessionId = session.id as string;
-        const topicId = session.topic_id as number;
+        const topicId = session.topic_id;
         const endTime = new Date().toISOString();
+
+        let extraPausedMinutes = 0;
+        if (session.session_status === 'paused') {
+            const lastPauseEventResult = await db.execute({
+                sql: `SELECT timestamp FROM focus_events WHERE session_id = ? AND event_type = 'paused' ORDER BY timestamp DESC LIMIT 1`,
+                args: [sessionId]
+            });
+            if (lastPauseEventResult.rows.length > 0) {
+                const pauseTimestamp = new Date(lastPauseEventResult.rows[0].timestamp as string).getTime();
+                const now = new Date(endTime).getTime();
+                extraPausedMinutes = Math.round((now - pauseTimestamp) / 60000);
+            }
+        }
+
+        const startTimeMs = new Date(session.start_time).getTime();
+        const endTimeMs = new Date(endTime).getTime();
+        const totalElapsedMinutes = Math.round((endTimeMs - startTimeMs) / 60000);
+        const totalPausedMinutes = session.paused_minutes + extraPausedMinutes;
+        const focusedMinutes = Math.max(0, totalElapsedMinutes - totalPausedMinutes);
 
         // 1. Update Session
         await db.execute({
             sql: `
                 UPDATE study_sessions 
-                SET session_status = 'completed', end_time = ?
+                SET session_status = 'completed', end_time = ?, focused_minutes = ?, paused_minutes = ?
                 WHERE id = ?
             `,
-            args: [endTime, sessionId]
+            args: [endTime, focusedMinutes, totalPausedMinutes, sessionId]
         });
 
         // 2. Log End Event
@@ -253,7 +283,7 @@ export const endSession = async (req: Request, res: Response) => {
         });
 
         res.json({
-            session: finalSession.rows[0],
+            session: finalSession.rows[0] as unknown as StudySession,
             streak: { current: currentStreak, best: bestStreak }
         });
     } catch (error) {
@@ -273,7 +303,7 @@ export const getActiveSession = async (req: Request, res: Response) => {
             return res.json(null);
         }
 
-        res.json(activeSession.rows[0]);
+        res.json(activeSession.rows[0] as unknown as StudySession);
     } catch (error) {
         console.error('getActiveSession error:', error);
         res.status(500).json({ error: 'Internal server error' });

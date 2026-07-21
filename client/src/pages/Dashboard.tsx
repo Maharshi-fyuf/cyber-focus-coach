@@ -1,4 +1,6 @@
 import { useDashboard } from '../hooks/useDashboard';
+import { useSessionStore } from '../stores/useSessionStore';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
 import { StatBox } from '../components/ui/StatBox';
 import { Button } from '../components/ui/Button';
@@ -6,6 +8,13 @@ import { Activity, Target, Flame, Play, CheckCircle2 } from 'lucide-react';
 
 export function Dashboard() {
   const { data, loading, error, refetch } = useDashboard();
+  const navigate = useNavigate();
+  const { startSession, loading: sessionLoading } = useSessionStore();
+
+  const handleStartSession = async (topicId?: number) => {
+    await startSession(topicId);
+    navigate('/session');
+  };
 
   if (loading) {
     return (
@@ -67,7 +76,13 @@ export function Dashboard() {
                 {data.active_topic.description}
               </p>
               <div style={{ display: 'flex', gap: '1rem' }}>
-                <Button variant="primary">START SESSION</Button>
+                <Button 
+                  variant="primary" 
+                  onClick={() => handleStartSession(data.active_topic?.id)}
+                  disabled={sessionLoading}
+                >
+                  START SESSION
+                </Button>
                 <Button variant="secondary">VIEW RESOURCES</Button>
               </div>
             </div>

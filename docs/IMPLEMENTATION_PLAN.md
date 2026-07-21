@@ -113,8 +113,8 @@ feat(scaffold): initialize monorepo with React+Vite and Express
 
 ---
 
-### ⏳ MILESTONE 06: Zustand Store + API Client
-**Status:** Not started  
+### ✅ MILESTONE 06: Focus Engine (Session, Timer & Focus Detection Foundation)
+**Status:** Complete  
 **Objective:** Create client-side state and typed API fetch wrappers  
 **Estimated Time:** 45 minutes  
 **Difficulty:** 2/5
